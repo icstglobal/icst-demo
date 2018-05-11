@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB"
+    crossorigin="anonymous">
+<script src="assets/js/web3.min.js"></script>
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>ICST Demo</title>
+
+<body>
+
+    <h1>Start A Skill Contract</h1>
+    <div class="container">
+        <form method="POST" action="/contract/create">
+
+            <div class="form-group">
+                <label>Producer</label>
+                <input id="producer" name="producer" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Consumer</label>
+                <input id="consumer" name="consumer" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Price</label>
+                <input id="price" name="price" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Platform</label>
+                <input id="platform" name="platform" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Ratio</label>
+                <input id="ratio" name="ratio" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Contract Content</label>
+                <textarea id="content" name="content" class="form-control"></textarea>
+            </div>
+            <button class="btn-primary" type="submit">Create</button>
+        </form>
+    </div>
+    <!-- <div class="container">
+        <div>
+            <label>Balance</label>
+            <input name="balance" />
+        </div>
+        <button type="button" class="btn btn-primary" onclick="loadBalance()">Load Balance</button>
+    </div> -->
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
+        crossorigin="anonymous"></script>
+</body>
+
+
+<script>
+    // var Web3 = require('web3')
+    // web3 = new Web3(new Web3.providers.HttpProvider("http://34.212.121.255:8545"));
+    // var eth = web3.eth
+    // var coinbase = eth.coinbase
+    // console.log(eth.coinbase)
+
+    function loadBalance() {
+        var balance = eth.getBalance(coinbase).toNumber()
+        $('input[name=balance]').val(balance)
+        console.log(balance)
+    }
+
+</script>
+
+</html>
