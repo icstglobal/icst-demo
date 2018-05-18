@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-var input = flag.String("input", "", "string to be signed, must be exactly 32 bytes")
+var input = flag.String("input", "", "hex string to be signed, must be exactly 32 bytes")
 var keyfile = flag.String("keyfile", "", "file path of the key, can not be empty")
 var pwd = flag.String("pwd", "", "password to decrypt the key file, can not be empty")
 
@@ -34,7 +34,11 @@ func main() {
 		fmt.Println("failed to decrypt key file, please check the password", err)
 		return
 	}
-	sig, err := crypto.Sign([]byte(*input), key.PrivateKey)
+	buf, err = hex.DecodeString(*input)
+	if err != nil {
+		fmt.Println("input can not be parsed as hex", err)
+	}
+	sig, err := crypto.Sign(buf, key.PrivateKey)
 	if err != nil {
 		fmt.Println("failed to sign input", err)
 		return
