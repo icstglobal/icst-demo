@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 
 	"github.com/icstglobal/go-icst/transaction"
+	"github.com/icstglobal/icst-demo/domain"
 
 	"github.com/kataras/iris/sessions"
 
@@ -38,7 +39,7 @@ func main() {
 	})
 
 	app.Post("/contract/create", func(ctx iris.Context) {
-		sc := &SkillContract{}
+		sc := &domain.SkillContract{}
 		if err := ctx.ReadForm(sc); err != nil {
 			ctx.StatusCode(iris.StatusBadRequest)
 			ctx.Text("failed parse request form")

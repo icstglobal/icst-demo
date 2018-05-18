@@ -1,4 +1,4 @@
-package main
+package domain
 
 type SkillContract struct {
 	Producer string
