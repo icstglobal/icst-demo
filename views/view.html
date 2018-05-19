@@ -12,30 +12,10 @@
     <h1>View A Skill Contract</h1>
     <div class="container">
 
-            <div class="form-group">
-                <label>Producer</label>
-                <span id="producer" class="form-control" >{{.Producer}}</span>
-            </div>
-            <div class="form-group">
-                <label>Consumer</label>
-                <span id="consumer" class="form-control" >{{.Consumer}}</span>
-            </div>
-            <div class="form-group">
-                <label>Price</label>
-                <span id="price" class="form-control">{{.Price}}</span>
-            </div>
-            <div class="form-group">
-                <label>Platform</label>
-                <span id="platform" class="form-control" >{{.Platform}}</span>
-            </div>
-            <div class="form-group">
-                <label>Ratio</label>
-                <span id="ratio" class="form-control">{{.Ratio}}</span>
-            </div>
-            <div class="form-group">
-                <label>Contract Content</label>
-                <textarea id="content" class="form-control" readonly>{{.Content}}</textarea>
-            </div>
+        <div class="form-group">
+            <label>Address</label>
+            <span id="contractAddr" class="form-control">{{.addr}}</span>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
