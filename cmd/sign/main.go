@@ -39,9 +39,10 @@ func main() {
 		fmt.Println("input can not be parsed as hex", err)
 	}
 	sig, err := crypto.Sign(buf, key.PrivateKey)
+	fmt.Printf("singer address: %v\n", crypto.PubkeyToAddress(key.PrivateKey.PublicKey).Hex()[2:])
 	if err != nil {
 		fmt.Println("failed to sign input", err)
 		return
 	}
-	fmt.Println("sig is:", hex.EncodeToString(sig))
+	fmt.Println("signature:", hex.EncodeToString(sig))
 }
