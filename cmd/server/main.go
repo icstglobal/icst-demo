@@ -15,6 +15,7 @@ import (
 	"github.com/kataras/iris/sessions"
 
 	"github.com/icstglobal/go-icst/chain"
+	"github.com/icstglobal/go-icst/chain/eth"
 	"github.com/kataras/iris"
 )
 
@@ -33,7 +34,7 @@ func main() {
 
 	go func() {
 		var err error
-		blc, err = chain.DialEthereum(url)
+		blc, err = eth.DialEthereum(url)
 		if err != nil {
 			app.Logger().Error("connecto to blockchain failed:", err)
 		}
@@ -109,7 +110,7 @@ func main() {
 			return
 		}
 
-		if err = blc.WaitMined(context.TODO(), trans.RawTx()); err != nil {
+		if err = blc.WaitMined(context.TODO(), trans.RawTx().(*transaction.ContractTransaction)); err != nil {
 			app.Logger().Error(err)
 			ctx.StatusCode(iris.StatusInternalServerError)
 			return
