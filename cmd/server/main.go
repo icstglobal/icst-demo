@@ -19,7 +19,7 @@ import (
 	"github.com/kataras/iris"
 )
 
-const url string = "http://localhost:8545"
+const url string = "http://119.28.248.204:8541"
 
 var blc chain.Chain
 
@@ -110,7 +110,7 @@ func main() {
 			return
 		}
 
-		if err = blc.WaitMined(context.TODO(), trans.RawTx().(*transaction.ContractTransaction)); err != nil {
+		if err = blc.WaitMined(context.TODO(), trans); err != nil {
 			app.Logger().Error(err)
 			ctx.StatusCode(iris.StatusInternalServerError)
 			return

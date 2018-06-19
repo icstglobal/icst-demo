@@ -14,7 +14,7 @@ import (
 )
 
 func cmdList(){
-	lst := []string{"accounts", "new account", "send tran from 0 to 1"}
+	lst := []string{"accounts", "new account", "send tran from 0 to 1", "sign data"}
 	for i, cmd := range lst {
 		i += 1
 		_cmd := strconv.Itoa(i) + ":" + cmd
@@ -69,7 +69,7 @@ func tran0to1(){
 }
 
 func sign(){
-	print("exec sign\n")
+	print("exec sign, please input data:\n")
 	var hexStr string
 	fmt.Scanln(&hexStr)
 	data, err := hex.DecodeString(hexStr)
