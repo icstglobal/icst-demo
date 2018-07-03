@@ -37,12 +37,18 @@ func executor(in string) {
 	switch fun.(type) {
 		case func():
 			fun.(func())()
+		case func(string):
+			param := ""
+			if len(args) > 1{
+				param = args[1]
+			}
+			fun.(func(string))(param)
 		case func(string)string:
 			param := ""
 			if len(args) > 1{
 				param = args[1]
 			}
-			if args[0] == "use"{
+			if args[0] == "useAccount"{
 				accountID := fun.(func(string)string)(param)
 				if len(accountID) != 0{
 					LivePrefixState.LivePrefix = accountID + "> "
@@ -55,9 +61,11 @@ func executor(in string) {
 
 func completer(in prompt.Document) []prompt.Suggest {
 	s := []prompt.Suggest{
+		// {Text: "localAccounts", Description: "show all local accounts info in the wallet"},
 		{Text: "accounts", Description: "show all accounts info in the wallet"},
 		{Text: "login", Description: "login"},
-		{Text: "use", Description: "choose a account to do operation"},
+		{Text: "importAccount", Description: "import a account"},
+		{Text: "useAccount", Description: "choose a account to do operation"},
 		{Text: "create", Description: "create a new contract"},
 	}
 	return prompt.FilterHasPrefix(s, in.GetWordBeforeCursor(), true)

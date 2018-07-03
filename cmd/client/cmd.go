@@ -10,6 +10,7 @@ import (
 	"strings"
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/mitchellh/mapstructure"
 	// "github.com/ethereum/go-ethereum/cmd/geth/accountcmd"
 )
 
@@ -22,8 +23,10 @@ var httpClient http.Client
 func Init() {
 	m = map[string]interface{}{
 		"accounts": accounts,
+		// "localAccounts": localAccounts,
 		"login": login,
-		"use": use,
+		"useAccount": useAccount,
+		"importAccount": importAccount,
 		"create": create,
 	}
 	URL = "http://127.0.0.1:8000"
@@ -34,7 +37,10 @@ func Init() {
         Jar: jar,
     }
 
-	w = Wallet{ID: "12345", Accounts:[]IAccount{}}
+	w = Wallet{
+		ID: "12345", 
+		Accounts:[]IAccount{},
+	}
 
 	keystoreDir := "./keystore"
 	files, err := ioutil.ReadDir(keystoreDir)
@@ -57,10 +63,29 @@ func Init() {
 	}
 }
 
-func accounts(){
-	for i, account := range(w.Accounts){
-		fmt.Printf("%d>", i+1)
+func localAccounts(){
+	i := 1
+	for _, account := range(w.Accounts){
+		fmt.Printf("%d>", i)
 		account.Info()
+		i = i + 1
+	}
+}
+
+func accounts(){
+	if !w.Login {
+		print("not login!\n")
+		return
+	}
+	i := 1
+	for _, account := range(w.Accounts){
+		id := account.GetID()
+		if len(id) > 0 {
+			fmt.Printf("%d> %s imported\n", i, id)
+		} else {
+			fmt.Printf("%d> %s\n", i, account.GetAddr())
+		}
+		i = i + 1
 	}
 }
 
@@ -74,22 +99,47 @@ func login(){
 		fmt.Println(err.Error())
 	}
 	resData := res["data"].(map[string]interface{})
-	fmt.Printf("user %s logged in.\n", resData["ID"])
+	w.Login = true
+
+	fmt.Printf("user %s logged in. \n", resData["ID"])
+
+	for _, account := range(resData["accounts"].([]interface{})){
+		ma := account.(map[string]interface{})
+
+		a := &RemoteAccount{}
+		err = mapstructure.Decode(ma, &a)
+		if err != nil {
+			fmt.Println(err)
+		}
+		w.UpdateAccount(a)
+
+		// fmt.Printf("account %s, %s \n", i, a)
+	}
+	accounts()
 }
 
 
-func use(param string) string{
+func useAccount(param string) string{
+	if !w.Login {
+		print("not login!\n")
+		return ""
+	}
+
 	index, err := strconv.Atoi(param)
 	if err != nil || (index > len(w.Accounts) && index < 1){
 		print("please input a correct index!\n")
 		return ""
 	}
+
 	a := w.Accounts[index-1]
 
+	if len(a.GetID()) == 0 {
+		print("it's not imported account\n")
+		return ""
+	}
+
 	data := map[string]string{
-		"chainType": strconv.Itoa(a.GetChainType()),
 		"accountID": a.GetID(),
-		"pubKey": a.GetPubKey(),
 	}
 	res, err := doRequest(URL + "/use", data)
 	if err != nil{
@@ -99,6 +149,37 @@ func use(param string) string{
 	w.CurAccount = a
 	resData := res["data"].(map[string]interface{})
 	return resData["accountID"].(string)
+}
+
+func importAccount(param string){
+	if !w.Login {
+		print("not login!\n")
+		return
+	}
+	index, err := strconv.Atoi(param)
+	if err != nil || (index > len(w.Accounts) && index < 1){
+		print("please input a correct index!\n")
+		return
+	}
+	a := w.Accounts[index-1]
+
+	data := map[string]string{
+		"chainType": strconv.Itoa(a.GetChainType()),
+		"pubKey": a.GetPubKey(),
+	}
+	res, err := doRequest(URL + "/import", data)
+	if err != nil{
+		fmt.Println(err.Error())
+		return
+	}
+	// fmt.Println(res)
+	ra := &RemoteAccount{}
+	err = mapstructure.Decode(res["data"], &a)
+	if err != nil {
+		fmt.Println(err)
+	}
+	w.UpdateAccount(ra)
+	accounts()
 }
 
 
@@ -126,7 +207,7 @@ func sign(hexStr string){
 		return
 	}
 	resData := res["data"].(map[string]interface{})
-	fmt.Printf("sign res: contractAddr(%s)\n", resData["contractAddr"])
+	fmt.Printf("sign res: contractAddr(%s)\n transHash(%s)\n", resData["contractAddr"], resData["transHash"])
 }
 
 func create(){
@@ -135,12 +216,12 @@ func create(){
 	}
 	data := map[string]string{
 		"chainType": "0",
-		"Producer": "0",
+		"Producer": "85d6e595a3e64d3353b888bc49ee27f1b9f2a656",
 		"Consumer": "0",
 		"Content": "0",
-		"Platform": "0",
-		"Price": "0",
-		"Ratio": "0",
+		"Platform": "571ee16fce50d1be5bf11e54cc2a2036f6c31046",
+		"Price": "10000",
+		"Ratio": "20",
 	}
 
 	res, err := doRequest(URL + "/contract/create", data)
@@ -155,7 +236,6 @@ func create(){
 	transHash := resData["transHash"].(string)
 	sign(transHash)
 }
-
 
 func doRequest(url string, data map[string]string)(map[string]interface{}, error){
 	var r http.Request

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"context"
 	"strconv"
 	"crypto/md5"
 	"encoding/hex"
-	// "fmt"
+	// "encoding/json"
+	"fmt"
 
 	"github.com/kataras/golog"
 
@@ -22,23 +24,53 @@ import (
 )
 
 const (
-	url string = "http://119.28.248.204:8541"
+	url string = "http://119.28.248.204:8549"
 )
 
-func returnData(status string, data map[string]interface{}, msg string) map[string]interface{}{
-	res := map[string]interface{}{
-		"status": status,
-		"msg": msg,
-	}
-	res["data"] = data
-	return res
+
+type Msg struct{
+	Status string `json:"status"`
+	MsgStr string `json:"msgstr"`
+	Data interface{} `json:"data"`
 }
+
+func returnData(status string, data interface{}, msgstr string) interface{}{
+	msg := Msg{
+		Status: status,	
+		MsgStr: msgstr,
+		Data: data,
+	}
+
+	return msg
+}
+
+var helpInfo = "help\n  -h      		帮助\n  -c conf/conf.toml	配置文件路径(必选)，默认conf/conf.toml\n"
+var cmdConf = flag.String("c", "", "配置文件路径")
+var cmdHelp = flag.Bool("h", false, "帮助")
 
 
 func main() {
 	app := iris.New()
 	app.Use(logger.New())
 	app.Logger().SetLevel(golog.Levels[golog.DebugLevel].Name)
+	log := app.Logger()
+	// flog
+	confFile := "" // 默认conf/conf.toml
+
+	//解析命令行标志
+	flag.Parse() // Scans the arg list and sets up flags
+	log.Infof("server start begin")
+	if *cmdConf != "" {
+		confFile = *cmdConf
+	} else if !*cmdHelp {
+		fmt.Printf(helpInfo)
+		return
+	}
+	if *cmdHelp {
+		fmt.Printf(helpInfo)
+		return
+	}
+
 	templateDir := "../../views"
 	app.RegisterView(iris.HTML(templateDir, ".html").Reload(true))
 
@@ -61,8 +93,8 @@ func main() {
 		// Consumer := ctx.PostValue("Consumer")
 		Content := ctx.PostValue("Content")
 		Platform := ctx.PostValue("Platform")
-		Price, err := strconv.Atoi(ctx.PostValue("Platform"))
-		Ratio, err := strconv.Atoi(ctx.PostValue("Ratio"))
+		Price, err := ctx.PostValueInt("Price")
+		Ratio, err := ctx.PostValueInt("Ratio")
 		if err != nil{
 			app.Logger().Error("failed to get chainType,", err)
 		}
@@ -107,13 +139,16 @@ func main() {
 		a := session.Start(ctx).Get("account").(*wallets.Account)
 		w := session.Start(ctx).Get("wallet").(*wallets.Wallet)
 
+		app.Logger().Debug("sign trans.rawTrans before", trans.Hex())
 		err := w.AfterSign(context.Background(), a, sigHex, trans)
 		if err != nil{
 			app.Logger().Error("failed to send transaction,", err)
 			ctx.StatusCode(iris.StatusInternalServerError)
 			return
 		}
+		app.Logger().Debug("sign trans.rawTrans after", trans.Hex())
 		data := map[string]interface{}{
+			"transHash": trans.Hex(),
 			"contractAddr": hex.EncodeToString(trans.ContractAddr),
 		}
 		ctx.JSON(returnData("success", data, "sign succeed."))
@@ -127,9 +162,6 @@ func main() {
 	app.Post("/login", func(ctx iris.Context) {
 		app.Logger().Debugf("login0", ctx.Request().Cookies())
 		walletID := ctx.PostValue("ID")
-		// ethAccountID := ctx.PostValue("ethAccountID")
-		// ethPubKey := ctx.PostValue("ethPubKey")
-		// ethChainType := chain.Eth
 
 		res := session.Start(ctx).Get("wallet")
 		app.Logger().Debugf("login", res)
@@ -143,17 +175,21 @@ func main() {
 			return
 		}
 		w := &wallets.Wallet{ID:walletID}
-		err := w.Init(url, []int{int(chain.Eth), int(chain.EOS)})  
+		err := w.Init(url, []int{int(chain.Eth), int(chain.EOS)}, confFile)  
 		if err != nil {
 			app.Logger().Error("init wallet error:", err)
 		}
-		// w.SetAccount(context.Background(), ethAccountID, ethPubKey, ethChainType)
+		accounts, err := w.GetAccounts(context.Background(), w.ID)
+		if err != nil {
+			app.Logger().Error("get accounts error:", err)
+		}
 
 		ses := session.Start(ctx)
 		ses.Set("wallet", w)
 
 		data := map[string]interface{}{
 			"ID": w.ID,
+			"accounts": accounts,
 		}
 		ctx.JSON(returnData("success", data, "Logged in."))
 	})
@@ -162,9 +198,9 @@ func main() {
 		app.Logger().Debugf("use0")
 
 		accountID := ctx.PostValue("accountID")
-		pubKey := ctx.PostValue("pubKey")
-		intChainType, err := strconv.Atoi(ctx.PostValue("chainType"))
-		chainType := chain.ChainType(intChainType)
+		// pubKey := ctx.PostValue("pubKey")
+		// intChainType, err := strconv.Atoi(ctx.PostValue("chainType"))
+		// chainType := chain.ChainType(intChainType)
 
 		res := session.Start(ctx).Get("wallet")
 		app.Logger().Debugf("login", res)
@@ -175,9 +211,6 @@ func main() {
 		}
 		w := res.(*wallets.Wallet)
 
-		if !w.IsExistAccount(context.Background(), accountID){
-			w.SetAccount(context.Background(), accountID, pubKey, chainType)
-		}
 		a, err := w.UseAccount(context.Background(), accountID)
 		if err != nil{
 			app.Logger().Error(err)
@@ -190,6 +223,33 @@ func main() {
 			"accountID": accountID,
 			"msg": "use account:" + accountID,
 		}
+		ctx.JSON(returnData("success", data, ""))
+	})
+
+	app.Post("/import", func(ctx iris.Context) {
+		app.Logger().Debugf("import0")
+
+		pubKey := ctx.PostValue("pubKey")
+		intChainType, err := strconv.Atoi(ctx.PostValue("chainType"))
+		chainType := chain.ChainType(intChainType)
+
+		res := session.Start(ctx).Get("wallet")
+		app.Logger().Debugf("import", res)
+
+		if res == nil{
+			ctx.JSON(returnData("fail", nil, "not login"))
+			return
+		}
+		w := res.(*wallets.Wallet)
+
+		if w.IsExistAccount(context.Background(), pubKey, chainType){
+		}
+
+		data, err := w.SetAccount(context.Background(), w.ID, pubKey, chainType)
+		if err != nil {
+			ctx.JSON(returnData("fail", nil, err.Error()))
+		}
+
 		ctx.JSON(returnData("success", data, ""))
 	})
 
