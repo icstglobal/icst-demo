@@ -89,7 +89,7 @@ func (a *EthAccount) Info() {
 	// key := a.Key
 	// fmt.Println("Id:", a.GetID())
 	fmt.Println("addr:", strings.ToLower(a.Key.Address.Hex()))
-	// fmt.Println("PublicKey base64: \n", a.GetPubKey())
+	fmt.Println("PublicKey base64: \n", a.GetPubKey())
 }
 
 func (a *EthAccount) Sign(hexStr string) (string, error) {

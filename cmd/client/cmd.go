@@ -85,6 +85,7 @@ func accounts(){
 		} else {
 			fmt.Printf("%d> %s\n", i, account.GetAddr())
 		}
+		account.Info()
 		i = i + 1
 	}
 }
@@ -98,7 +99,7 @@ func login(){
 	if err != nil{
 		fmt.Println(err.Error())
 	}
-	resData := res["data"].(map[string]interface{})
+	resData := res.Data.(map[string]interface{})
 	w.Login = true
 
 	fmt.Printf("user %s logged in. \n", resData["ID"])
@@ -147,7 +148,7 @@ func useAccount(param string) string{
 		return ""
 	}
 	w.CurAccount = a
-	resData := res["data"].(map[string]interface{})
+	resData := res.Data.(map[string]interface{})
 	return resData["accountID"].(string)
 }
 
@@ -174,7 +175,7 @@ func importAccount(param string){
 	}
 	// fmt.Println(res)
 	ra := &RemoteAccount{}
-	err = mapstructure.Decode(res["data"], &a)
+	err = mapstructure.Decode(res.Data, &a)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -206,7 +207,7 @@ func sign(hexStr string){
 		fmt.Println(err.Error())
 		return
 	}
-	resData := res["data"].(map[string]interface{})
+	resData := res.Data.(map[string]interface{})
 	fmt.Printf("sign res: contractAddr(%s)\n transHash(%s)\n", resData["contractAddr"], resData["transHash"])
 }
 
@@ -230,14 +231,20 @@ func create(){
 		return
 	}
 
-	resData := res["data"].(map[string]interface{})
+	resData := res.Data.(map[string]interface{})
 	fmt.Printf("create res: transHash(%s)\n", resData["transHash"])
 
 	transHash := resData["transHash"].(string)
 	sign(transHash)
 }
 
-func doRequest(url string, data map[string]string)(map[string]interface{}, error){
+type Msg struct{
+	Status string `json:"status"`
+	MsgStr string `json:"msgstr"`
+	Data interface{} `json:"data"`
+}
+
+func doRequest(url string, data map[string]string)(*Msg, error){
 	var r http.Request
 	r.ParseForm()
 	for k, v := range(data){
@@ -253,12 +260,14 @@ func doRequest(url string, data map[string]string)(map[string]interface{}, error
 		if err != nil {
 			log.Fatal(err)
 		}
-		var dat map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &dat); err != nil {
+		// var dat map[string]interface{}
+		// var dat Msg
+		dat := &Msg{}
+		if err := json.Unmarshal(bodyBytes, dat); err != nil {
 			panic(err)
 		}
-		if dat["status"] == "fail" || dat["status"] == "error"{
-			return nil, fmt.Errorf(dat["msg"].(string))
+		if dat.Status == "fail" || dat.Status == "error"{
+			return nil, fmt.Errorf(dat.MsgStr)
 		}
 		return dat, err
 	}

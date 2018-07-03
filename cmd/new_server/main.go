@@ -210,6 +210,10 @@ func main() {
 			return
 		}
 		w := res.(*wallets.Wallet)
+		if !w.HasAccount(context.Background(), accountID){
+			ctx.JSON(returnData("fail", nil, "cannot find accountID:"+accountID))
+			return
+		}
 
 		a, err := w.UseAccount(context.Background(), accountID)
 		if err != nil{
@@ -243,11 +247,14 @@ func main() {
 		w := res.(*wallets.Wallet)
 
 		if w.IsExistAccount(context.Background(), pubKey, chainType){
+			ctx.JSON(returnData("fail", nil, "account has been imported!"))
+			return
 		}
 
 		data, err := w.SetAccount(context.Background(), w.ID, pubKey, chainType)
 		if err != nil {
 			ctx.JSON(returnData("fail", nil, err.Error()))
+			return
 		}
 
 		ctx.JSON(returnData("success", data, ""))
