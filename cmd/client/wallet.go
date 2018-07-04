@@ -73,8 +73,6 @@ func (a *EthAccount) SetID(accountID string) {
 func (a *EthAccount) GetPubKey() string{
 	pubKey := a.Key.PrivateKey.PublicKey
 	// fmt.Println(base64.StdEncoding.EncodeToString(crypto.FromECDSAPub(&pubKey)))
-	// fmt.Println(hex.EncodeToString(crypto.FromECDSAPub(&pubKey)))
-	// fmt.Println(a.Key.PrivateKey)
 
 	return base64.StdEncoding.EncodeToString(crypto.FromECDSAPub(&pubKey))
 }

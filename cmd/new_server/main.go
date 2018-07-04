@@ -111,10 +111,10 @@ func main() {
 		contractData["PPrice"] = uint32(Price)
 		contractData["PRatio"] = uint8(Ratio)
 		app.Logger().Debugf("contractData:%v", contractData)
-		w := session.Start(ctx).Get("wallet").(*wallets.Wallet)
+		// w := session.Start(ctx).Get("wallet").(*wallets.Wallet)
 		a := session.Start(ctx).Get("account").(*wallets.Account)
 
-		trans, err := w.CreateContentContractTrans(context.Background(), a, contractData)
+		trans, err := a.CreateContentContractTrans(context.Background(), contractData)
 		if err != nil {
 			app.Logger().Error("failed to create contract:", err)
 			ctx.StatusCode(iris.StatusInternalServerError)
@@ -137,10 +137,9 @@ func main() {
 		sigHex := ctx.PostValue("sig")
 		trans := session.Start(ctx).Get("trans").(*transaction.ContractTransaction)
 		a := session.Start(ctx).Get("account").(*wallets.Account)
-		w := session.Start(ctx).Get("wallet").(*wallets.Wallet)
 
 		app.Logger().Debug("sign trans.rawTrans before", trans.Hex())
-		err := w.AfterSign(context.Background(), a, sigHex, trans)
+		err := a.AfterSign(context.Background(), sigHex, trans)
 		if err != nil{
 			app.Logger().Error("failed to send transaction,", err)
 			ctx.StatusCode(iris.StatusInternalServerError)
